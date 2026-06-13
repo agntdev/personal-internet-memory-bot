@@ -1,8 +1,8 @@
-// Core bot assembly: every command, callback router, and text
-// fallback lives here so registration order is always correct:
-// commands first, generic text/callback fallbacks last. Feature
-// installers (F03 + FEAT01..FEAT12) plug into the BotApp between
-// the two halves.
+// Core bot assembly: the error boundary, /cancel, the callback
+// router, and the text router. Feature installers (startFeature,
+// helpFeature, plus F03 + FEAT02..FEAT12) plug into the BotApp
+// in between, so registration order is always correct: commands
+// first, generic text/callback fallbacks last.
 
 import { createBot } from "@agntdev/bot-toolkit";
 import type { Bot } from "grammy";
@@ -37,38 +37,6 @@ export function buildBot(
     }
   });
 
-  // ── /start (FEAT01): registration + welcome (details.md §1) ──
-  bot.command("start", async (ctx) => {
-    if (ctx.from) store.upsertUser(ctx.from.id);
-    await ctx.reply(
-      "Welcome to your Personal Internet Memory 🧠\n" +
-        "Forward me anything — articles, tweets, links, notes.\n" +
-        "I'll tag, summarize, and resurface it weekly.\n\n" +
-        "Try /list, /search, or /tags to find stuff later.",
-    );
-  });
-
-  // ── /help (FEAT01): command list reply (details.md §2) ──
-  bot.command("help", async (ctx) => {
-    await ctx.reply(
-      "/start — Greet + one-line overview\n" +
-        "/help — List every command with one-line description\n" +
-        "/save — Manual save: bot asks for text/link, then tags + summarizes\n" +
-        "/list [n] — Most recent N items (default 10, max 50)\n" +
-        "/search <query> — Natural-language search\n" +
-        "/tag <name> — Show all items with that tag\n" +
-        "/tags — List all the user's tags with item counts\n" +
-        "/collections — List collections\n" +
-        "/collection <name|id> — Show items in a collection\n" +
-        "/deletecollection <name|id> — Delete a manual collection (with confirm)\n" +
-        "/rename <old> <new> — Rename a tag or manual collection\n" +
-        "/delete <id> — Delete an item (with confirm)\n" +
-        "/digest — Manually trigger this week's digest\n" +
-        "/stats — Dashboard: totals, top tags, next digest\n" +
-        "/cancel — Abort any in-flight multi-step flow",
-    );
-  });
-
   // ── /cancel (FEAT10): clears session step, always works (details.md §15) ──
   bot.command("cancel", async (ctx) => {
     ctx.session.step = "idle";
@@ -78,7 +46,7 @@ export function buildBot(
     await ctx.reply("Cancelled.");
   });
 
-  // ── feature installers (F03 + FEAT01..FEAT12) ──
+  // ── feature installers (FEAT01..FEAT12) ──
   const commands = new Map<string, (ctx: Ctx, user: UserRecordLite) => Promise<void>>();
   const callbacks = new Map<string, (ctx: Ctx, data: string, user: UserRecordLite) => Promise<void>>();
   const states = new Map<string, (ctx: Ctx, text: string, user: UserRecordLite) => Promise<void>>();
@@ -95,7 +63,7 @@ export function buildBot(
   };
   for (const install of features) install(app);
 
-  // ── feature commands (registered AFTER core, so features
+  // ── feature commands (registered AFTER /cancel so features
   //    can override /start etc. if they really need to) ──
   for (const [name, fn] of commands) {
     bot.command(name, async (ctx) => {
