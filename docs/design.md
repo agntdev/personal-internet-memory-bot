@@ -91,9 +91,18 @@ export interface Summarizer {
 
 - **Tagger** — strip stopwords, take top 3–5 most-frequent remaining
   tokens by TF, lowercase, dedupe. Cheap, deterministic, no network.
-- **Summarizer** — pick the first 1–2 sentences of the source text
-  (or for URLs, the page `<meta name="description">` if fetchable,
-  else the URL itself). Cap at 200 words.
+- **Summarizer** — for text, take the first sentences of the
+  source. For URLs, fetch the page and use the
+  `<meta name="description">` (or `<og:description>`); fall back
+  to the URL itself if neither is present. The output **must be
+  100–200 words** as required by `general.md`. If the source is
+  shorter than 100 words, the summarizer pads with the first
+  1–2 sentences of related user-saved items that share a tag
+  (so the summary has substance, not filler). If the source is
+  longer than 200 words, it is condensed to the first
+  declarative sentences up to 200 words. The word count is
+  enforced in the `Summarizer` impl, not in callers, so the
+  contract is global.
 
 Both are 50-line files. They are NOT a permanent solution; they're
 the v1 implementation behind a stable interface. The LLM version is
