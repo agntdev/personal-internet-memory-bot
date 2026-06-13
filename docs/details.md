@@ -73,7 +73,13 @@
   5. Insert into `items` (with `telegram_message_id =
      ctx.message.message_id`, `created_at = now()`), then
      `tags` (upsert by `(user_id, name)`), then `item_tags`.
-  6. Reply with the confirmation card (§3.1).
+  6. **Auto-collection creation** — for each tag on the new item,
+     if `count(items with that tag) >= 3` AND no
+     `kind = 'auto'` collection exists with that name for the
+     user, create one and attach the new item. See §9.1.1 for
+     the full lifecycle. (This is what makes `/collections` show
+     auto groupings.)
+  7. Reply with the confirmation card (§3.1).
 
 ### 3.1 Confirmation card
 
@@ -301,6 +307,17 @@ tags are deduped per user, this is a non-issue in practice.
 ```
 
 `[Delete collection]` only shows for `kind = 'manual'`.
+
+### 9.2.1 Auto-collection note
+
+Auto-collections are **not created by `/collection`** — they are
+created by the save flow (see §3 step 6 and §9.1.1). `/collection
+<name>` only displays an existing collection's items; it never
+materializes a new one. Users who want a brand-new empty
+collection must save 3+ items with the same tag first, or use a
+`/collection <new-name>` to create a **manual** collection
+(implicit create-on-first-lookup, also documented in
+`design.md` §4.7).
 
 ### 9.3 `/deletecollection <name|id>`
 
