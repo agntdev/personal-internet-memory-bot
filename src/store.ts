@@ -57,6 +57,13 @@ export interface Store {
   /** Find all items with a given tag name, newest first. */
   getItemsByTag(userId: number, tagName: string): Promise<SearchResult[]>;
 
+  // FEAT07 (delete): look up a single item, delete it.
+  getItem(
+    userId: number,
+    id: number,
+  ): Promise<{ id: number; summary: string } | undefined>;
+  deleteItem(userId: number, id: number): Promise<boolean>;
+
   // FEAT06 (rename): list collections for a user, rename a tag,
   // rename a manual collection. The in-memory store tracks
   // collections in a separate Map; the Postgres impl (F01 +
@@ -220,6 +227,22 @@ export class MemoryStore implements Store {
     }
     results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     return results;
+  }
+
+  // FEAT07 (delete): look up a single item, delete it.
+  async getItem(
+    userId: number,
+    id: number,
+  ): Promise<{ id: number; summary: string } | undefined> {
+    const item = this.items.get(id);
+    if (!item || item.userId !== userId) return undefined;
+    return { id: item.id, summary: item.summary };
+  }
+
+  async deleteItem(userId: number, id: number): Promise<boolean> {
+    const item = this.items.get(id);
+    if (!item || item.userId !== userId) return false;
+    return this.items.delete(id);
   }
 
   // FEAT06 (rename): minimal in-memory collection tracking.
