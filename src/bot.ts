@@ -51,6 +51,7 @@ export function buildBot(
   const callbacks = new Map<string, (ctx: Ctx, data: string, user: UserRecordLite) => Promise<void>>();
   const states = new Map<string, (ctx: Ctx, text: string, user: UserRecordLite) => Promise<void>>();
   let textHandler: ((ctx: Ctx, text: string, user: UserRecordLite) => Promise<void>) | null = null;
+  let messageHandler: ((ctx: Ctx, user: UserRecordLite) => Promise<void>) | null = null;
 
   const app: BotApp = {
     store,
@@ -59,6 +60,9 @@ export function buildBot(
     onState: (ns, fn) => states.set(ns, fn),
     onText: (fn) => {
       textHandler = fn;
+    },
+    onMessage: (fn) => {
+      messageHandler = fn;
     },
   };
   for (const install of features) install(app);
@@ -92,6 +96,8 @@ export function buildBot(
   // ── text router: feature states, feature text handler, fallback ──
   bot.on("message:text", async (ctx) => {
     if (!ctx.from) return;
+    // Skip commands.
+    if (ctx.message.entities?.some((e) => e.type === "bot_command")) return;
     const user = store.upsertUser(ctx.from.id);
     const text = ctx.message.text.trim();
     const stateNs = ctx.session.step.split(":", 1)[0]!;
@@ -105,6 +111,27 @@ export function buildBot(
       return;
     }
     // Stray text in idle with no text handler: ask for clarification.
+    await ctx.reply("I didn't catch that. Try /help for the list of commands.");
+  });
+
+  // ── message router: non-text messages (photo, video, etc.) ──
+  bot.on("message", async (ctx) => {
+    if (!ctx.from) return;
+    // Skip text messages (handled by the text router above).
+    if (ctx.message?.text) return;
+    const user = store.upsertUser(ctx.from.id);
+    const stateNs = ctx.session.step.split(":", 1)[0]!;
+    if (stateNs !== "idle") {
+      const stateHandler = states.get(stateNs);
+      if (stateHandler) {
+        await stateHandler(ctx, ctx.message?.caption ?? "", user);
+        return;
+      }
+    }
+    if (messageHandler && ctx.session.step === "idle") {
+      await messageHandler(ctx, user);
+      return;
+    }
     await ctx.reply("I didn't catch that. Try /help for the list of commands.");
   });
 
