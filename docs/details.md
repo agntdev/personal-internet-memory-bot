@@ -58,21 +58,33 @@
      - `link` if `text` contains a URL OR the message is a
        forwarded web-page preview (`entities` has `text_link` or
        `url`).
-     - `text` if there's a non-empty `text` and no URL.
-     - `image` / `video` / `audio` / `voice` / `document` if those
-       `message` fields are present (use the first that matches).
-     - `other` otherwise.
+     - `text` if `text` is non-empty and no URL.
+     - `image` / `video` / `audio` / `voice` / `document` only
+       when **both** the media field is present **and** the
+       message has a non-empty `caption`. (This is the
+       enforcement of the `design.md` §6 rule — a media message
+       without a caption is text-free, so it gets the same
+       treatment as no-text: `kind = 'other'`, no tags.)
+     - `other` otherwise (covers: no text + no caption; media
+       without a caption; unrecognized message types; stickers,
+       contacts, locations, dice, service messages, etc.).
   2. Build `raw_text`:
      - `link` → the URL.
      - `text` → the message text.
-     - media → `caption` if present, else a label like
-       `"[image]"`, `"[video 1:42]"` (using the `duration` field
-       if present, else omitted).
+     - media with caption → the caption.
+     - `other` (including media without caption) → `""`.
+       No label fallback, no synthesized text.
   3. Generate `tags` via `Tagger.tag({ text: raw_text, kind })`
      **except for `kind = 'other'`** (see §3.3), where the
-     Tagger is **not** called and `tags = []` is used. The
-     Tagger is also not called when `raw_text` is empty
-     after the build step in step 2.
+     Tagger is **not** called and `tags = []` is used.
+     **This is the enforcement point for the `design.md` §6
+     rule "Forwarded message with no text and no caption →
+     no tags"** — the short-circuit happens in the save
+     pipeline, not in the Tagger impl, so a default or
+     future Tagger can't accidentally reintroduce tags.
+     Because step 1 already routes all text-free media to
+     `kind = 'other'`, the Tagger never sees label fallbacks
+     like `[image]`, so it cannot synthesize tags from them.
   4. Generate `summary` via `Summarizer.summarize({ text: raw_text, kind })`
      except for `kind = 'other'`, where the summary is the
      placeholder string `"[media]"` (no LLM/heuristic call).
@@ -109,26 +121,26 @@ Saved <weekday> <HH:MM>.
 
 ### 3.3 No-text / no-caption forwarded message (`kind = 'other'`)
 
-A forwarded message with no `text` field, no `caption`, and no
-recognizable media type falls into `kind = 'other'`. Examples:
-a contact card, a sticker without caption, a forwarded
-location pin, a Telegram Premium emoji, a service message.
+A forwarded message falls into `kind = 'other'` whenever it
+has no `text` and no `caption`. Examples that hit this bucket:
+- a contact card
+- a sticker without caption
+- a forwarded location pin
+- a Telegram Premium emoji
+- a service message
+- **a forwarded image/video/audio/voice/document without a
+  caption** (per `design.md` §6 — the only "kind" the design
+  spec cares about for media without text is "other")
+
 The save flow handles this specifically:
 
 - `kind` is forced to `'other'`.
-- `raw_text` is `""` (empty).
+- `raw_text` is `""` (empty). No label fallback.
 - **Tagger is NOT called** — `tags = []`. This is enforced
   in code, not by the Tagger: the save pipeline checks
   `kind === 'other'` and short-circuits the Tagger step.
-  Skipping the Tagger matters because some tagger
-  implementations (default fallback when none configured)
-  could still produce spurious tags from the message's
-  `caption` field or other fields — the design rule
-  (and `general.md`) is that media without text/caption
-  has no tags.
 - **Summarizer is NOT called** — `summary` is set to the
-  literal string `"[media]"` (which is also what the
-  `items.summary` column stores for these rows).
+  literal string `"[media]"`.
 - Auto-collection creation (§3 step 6) is a no-op because
   the tag list is empty.
 - The item **is still saved** — `kind = 'other'`, `raw_text = ''`,
@@ -136,7 +148,10 @@ The save flow handles this specifically:
   still sent (per `design.md` §6).
 
 This guarantees `kind = 'other'` items never carry tags, never
-have a generated summary, and never enter auto-collections.
+have a generated summary, and never enter auto-collections. It
+also closes the gap where a media-without-caption message
+previously got a synthesized label like `[image]` and could
+have leaked through the Tagger.
 
 ### 3.2 Edges
 
