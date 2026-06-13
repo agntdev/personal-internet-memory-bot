@@ -68,8 +68,14 @@
      - media → `caption` if present, else a label like
        `"[image]"`, `"[video 1:42]"` (using the `duration` field
        if present, else omitted).
-  3. Generate `tags` via `Tagger.tag({ text: raw_text, kind })`.
-  4. Generate `summary` via `Summarizer.summarize({ text: raw_text, kind })`.
+  3. Generate `tags` via `Tagger.tag({ text: raw_text, kind })`
+     **except for `kind = 'other'`** (see §3.3), where the
+     Tagger is **not** called and `tags = []` is used. The
+     Tagger is also not called when `raw_text` is empty
+     after the build step in step 2.
+  4. Generate `summary` via `Summarizer.summarize({ text: raw_text, kind })`
+     except for `kind = 'other'`, where the summary is the
+     placeholder string `"[media]"` (no LLM/heuristic call).
   5. Insert into `items` (with `telegram_message_id =
      ctx.message.message_id`, `created_at = now()`), then
      `tags` (upsert by `(user_id, name)`), then `item_tags`.
@@ -100,6 +106,37 @@ Saved <weekday> <HH:MM>.
   in §11.4.
 - `[Delete]` → `callback_data = "del:<item_id>"`. Handler in
   §11.5.
+
+### 3.3 No-text / no-caption forwarded message (`kind = 'other'`)
+
+A forwarded message with no `text` field, no `caption`, and no
+recognizable media type falls into `kind = 'other'`. Examples:
+a contact card, a sticker without caption, a forwarded
+location pin, a Telegram Premium emoji, a service message.
+The save flow handles this specifically:
+
+- `kind` is forced to `'other'`.
+- `raw_text` is `""` (empty).
+- **Tagger is NOT called** — `tags = []`. This is enforced
+  in code, not by the Tagger: the save pipeline checks
+  `kind === 'other'` and short-circuits the Tagger step.
+  Skipping the Tagger matters because some tagger
+  implementations (default fallback when none configured)
+  could still produce spurious tags from the message's
+  `caption` field or other fields — the design rule
+  (and `general.md`) is that media without text/caption
+  has no tags.
+- **Summarizer is NOT called** — `summary` is set to the
+  literal string `"[media]"` (which is also what the
+  `items.summary` column stores for these rows).
+- Auto-collection creation (§3 step 6) is a no-op because
+  the tag list is empty.
+- The item **is still saved** — `kind = 'other'`, `raw_text = ''`,
+  `summary = '[media]'`, no `item_tags` rows. Confirm card
+  still sent (per `design.md` §6).
+
+This guarantees `kind = 'other'` items never carry tags, never
+have a generated summary, and never enter auto-collections.
 
 ### 3.2 Edges
 
