@@ -165,7 +165,7 @@ Slash-free entry points:
 | Trigger | Behavior |
 |---|---|
 | Forwarded message (any kind) | Save → tag → summarize → confirm. |
-| Plain text outside a flow (when `session.step === "idle"`) | Routed to the save pipeline (kind = `text`). Users search explicitly via `/search`; we never auto-detect a query from plain text. The `/search` command is the only search entry point. |
+| Plain text outside a flow (when `session.step === "idle"`) | **If the text has 2+ words, treat it as a search shortcut** (same as `/search <text>`). Single-word or empty text is routed to the save pipeline (kind = `text`). Users can also call `/search` explicitly; both paths produce the same result. |
 | Callback `tag:more:<name>` | Extend `/tag <name>` results. |
 
 ## 4. Conversation / UX Flows
