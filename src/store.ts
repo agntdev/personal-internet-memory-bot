@@ -56,6 +56,24 @@ export interface Store {
 
   /** Find all items with a given tag name, newest first. */
   getItemsByTag(userId: number, tagName: string): Promise<SearchResult[]>;
+
+  // FEAT06 (rename): list collections for a user, rename a tag,
+  // rename a manual collection. The in-memory store tracks
+  // collections in a separate Map; the Postgres impl (F01 +
+  // future wire-up) hits the collections table.
+  listCollections(
+    userId: number,
+  ): Promise<Array<{ name: string; kind: "auto" | "manual" }>>;
+  renameTag(
+    userId: number,
+    oldName: string,
+    newName: string,
+  ): Promise<{ itemsAffected: number }>;
+  renameCollection(
+    userId: number,
+    oldName: string,
+    newName: string,
+  ): Promise<{ collectionsAffected: number }>;
 }
 
 export interface UserRecord {
@@ -202,5 +220,57 @@ export class MemoryStore implements Store {
     }
     results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     return results;
+  }
+
+  // FEAT06 (rename): minimal in-memory collection tracking.
+  // Keyed by `${userId}:${name}:${kind}` for unique-per-user
+  // scoping. Real impl (Postgres) hits the collections table.
+  private collections = new Map<string, { name: string; kind: "auto" | "manual" }>();
+  private collKey(userId: number, name: string, kind: "auto" | "manual"): string {
+    return `${userId}:${name}:${kind}`;
+  }
+
+  async listCollections(
+    userId: number,
+  ): Promise<Array<{ name: string; kind: "auto" | "manual" }>> {
+    const out: Array<{ name: string; kind: "auto" | "manual" }> = [];
+    for (const [key, c] of this.collections.entries()) {
+      if (key.startsWith(`${userId}:`)) out.push({ name: c.name, kind: c.kind });
+    }
+    return out;
+  }
+
+  async renameTag(
+    userId: number,
+    oldName: string,
+    newName: string,
+  ): Promise<{ itemsAffected: number }> {
+    let n = 0;
+    for (const item of this.items.values()) {
+      if (item.userId !== userId) continue;
+      const idx = item.tags.indexOf(oldName);
+      if (idx >= 0) {
+        item.tags[idx] = newName;
+        n++;
+      }
+    }
+    return { itemsAffected: n };
+  }
+
+  async renameCollection(
+    userId: number,
+    oldName: string,
+    newName: string,
+  ): Promise<{ collectionsAffected: number }> {
+    let n = 0;
+    for (const [key, c] of this.collections.entries()) {
+      if (c.name === oldName && key.startsWith(`${userId}:`) && c.kind === "manual") {
+        const newKey = this.collKey(userId, newName, c.kind);
+        this.collections.delete(key);
+        this.collections.set(newKey, { name: newName, kind: c.kind });
+        n++;
+      }
+    }
+    return { collectionsAffected: n };
   }
 }
