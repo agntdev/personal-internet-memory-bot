@@ -72,7 +72,12 @@
      **except for `kind = 'other'`** (see §3.3), where the
      Tagger is **not** called and `tags = []` is used. The
      Tagger is also not called when `raw_text` is empty
-     after the build step in step 2.
+     after the build step in step 2. **This is the
+     enforcement point for the `design.md` §6 rule
+     "Forwarded message with no text and no caption → no
+     tags"** — the short-circuit happens in the save
+     pipeline, not in the Tagger impl, so a default or
+     future Tagger can't accidentally reintroduce tags.
   4. Generate `summary` via `Summarizer.summarize({ text: raw_text, kind })`
      except for `kind = 'other'`, where the summary is the
      placeholder string `"[media]"` (no LLM/heuristic call).
