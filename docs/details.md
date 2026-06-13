@@ -73,7 +73,13 @@
   5. Insert into `items` (with `telegram_message_id =
      ctx.message.message_id`, `created_at = now()`), then
      `tags` (upsert by `(user_id, name)`), then `item_tags`.
-  6. Reply with the confirmation card (§3.1).
+  6. **Auto-collection creation** — for each tag on the new item,
+     if `count(items with that tag) >= 3` AND no
+     `kind = 'auto'` collection exists with that name for the
+     user, create one and attach the new item. See §9.1.1 for
+     the full lifecycle. (This is what makes `/collections` show
+     auto groupings.)
+  7. Reply with the confirmation card (§3.1).
 
 ### 3.1 Confirmation card
 
@@ -241,6 +247,47 @@ Manual:
 
 Each name is a `callback_data = "coll:<id>"` button.
 
+### 9.1.1 Auto-collection creation
+
+Auto-collections are created as a side effect of the save flow
+(§3). After the `items` / `tags` / `item_tags` rows are inserted
+for a newly-saved item, run:
+
+1. For each tag on the new item, count items with that tag for
+   the same user:
+   `SELECT COUNT(*) FROM item_tags WHERE tag_id = $tagId`.
+2. If count `>= 3` AND no `collections` row exists with
+   `name = $tagName AND kind = 'auto'` for the user, insert one:
+   `INSERT INTO collections (user_id, name, kind) VALUES ($1,
+   $tagName, 'auto') RETURNING id`. Then `INSERT INTO
+   collection_items (collection_id, item_id) VALUES
+   ($newCollId, $newItemId)`.
+3. If the auto-collection already exists, still add the new
+   item to it: `INSERT INTO collection_items ... ON CONFLICT
+   DO NOTHING`.
+
+**Lifecycle:**
+
+- An auto-collection persists as long as its source tag has
+  ≥ 3 items.
+- It ungroups itself automatically when the source tag drops
+  below 3 items: e.g. when an item is deleted (and was the
+  last item carrying that tag), or when a `/rename` of the
+  source tag moves the items out (and the count falls below 3
+  for the new tag name). The ungroup step is a single
+  `DELETE FROM collections WHERE id = $id AND kind = 'auto'
+  AND (SELECT COUNT(*) FROM item_tags WHERE tag_id = ...) < 3`.
+  This runs in the same transaction as the delete / rename
+  that triggered it.
+- Auto-collections are never user-deletable (see §9.3).
+
+**Tag → collection name:** the auto-collection's `name` is
+identical to the tag's `name` (lowercase, as produced by the
+Tagger). The `collections.name` column is unique per user only
+for `kind = 'manual'`; multiple `kind = 'auto'` rows could in
+principle share a name, but since names are tag-derived and
+tags are deduped per user, this is a non-issue in practice.
+
 ### 9.2 `/collection <name|id>`
 
 - **Trigger:** `/collection <name|id>`.
@@ -260,6 +307,17 @@ Each name is a `callback_data = "coll:<id>"` button.
 ```
 
 `[Delete collection]` only shows for `kind = 'manual'`.
+
+### 9.2.1 Auto-collection note
+
+Auto-collections are **not created by `/collection`** — they are
+created by the save flow (see §3 step 6 and §9.1.1). `/collection
+<name>` only displays an existing collection's items; it never
+materializes a new one. Users who want a brand-new empty
+collection must save 3+ items with the same tag first, or use a
+`/collection <new-name>` to create a **manual** collection
+(implicit create-on-first-lookup, also documented in
+`design.md` §4.7).
 
 ### 9.3 `/deletecollection <name|id>`
 
