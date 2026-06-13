@@ -56,6 +56,18 @@ export interface Store {
 
   /** Find all items with a given tag name, newest first. */
   getItemsByTag(userId: number, tagName: string): Promise<SearchResult[]>;
+
+  /** Pick items due for the digest (times_shown < 5, next_show_at <= now).
+   *  Ordered by next_show_at ASC, limited to `limit` results. */
+  pickDigestItems(userId: number, limit: number): Promise<SearchResult[]>;
+
+  /** Mark digest items as shown: bump times_shown, set
+   *  next_show_at = now + 7 days (snooze). */
+  markDigestItemsSnoozed(itemIds: number[]): Promise<void>;
+
+  /** Count items currently due for digest (times_shown < 5,
+   *  next_show_at <= now) for a user. */
+  getDigestDueCount(userId: number): Promise<number>;
 }
 
 export interface UserRecord {
@@ -77,6 +89,13 @@ interface InternalItem {
   createdAt: Date;
 }
 
+interface InternalSrsState {
+  itemId: number;
+  lastShownAt: Date | null;
+  timesShown: number;
+  nextShowAt: Date;
+}
+
 /** In-memory implementation. The harness relies on a fresh
  *  instance per spec; the production runtime replaces this with
  *  the Postgres-backed implementation from F01. */
@@ -84,6 +103,7 @@ export class MemoryStore implements Store {
   private byTelegram = new Map<number, UserRecord>();
   private nextId = 1;
   private items = new Map<number, InternalItem>();
+  private srs = new Map<number, InternalSrsState>();
   private nextItemId = 1;
 
   upsertUser(telegramId: number): UserRecord {
@@ -121,6 +141,8 @@ export class MemoryStore implements Store {
       createdAt: new Date(),
     };
     this.items.set(id, item);
+    const nextShowAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    this.srs.set(id, { itemId: id, lastShownAt: null, timesShown: 0, nextShowAt });
     return {
       id: item.id,
       userId: item.userId,
@@ -202,5 +224,47 @@ export class MemoryStore implements Store {
     }
     results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     return results;
+  }
+
+  async pickDigestItems(userId: number, limit: number): Promise<SearchResult[]> {
+    const now = new Date();
+    const candidates: Array<{ item: InternalItem; nextShowAt: Date }> = [];
+    for (const [itemId, srsState] of this.srs) {
+      if (srsState.timesShown >= 5) continue;
+      if (srsState.nextShowAt > now) continue;
+      const item = this.items.get(itemId);
+      if (!item || item.userId !== userId) continue;
+      candidates.push({ item, nextShowAt: srsState.nextShowAt });
+    }
+    candidates.sort((a, b) => a.nextShowAt.getTime() - b.nextShowAt.getTime());
+    return candidates.slice(0, limit).map((c) => ({
+      id: c.item.id,
+      summary: c.item.summary,
+      createdAt: c.item.createdAt,
+      tags: c.item.tags,
+    }));
+  }
+
+  async markDigestItemsSnoozed(itemIds: number[]): Promise<void> {
+    for (const id of itemIds) {
+      const s = this.srs.get(id);
+      if (!s) continue;
+      s.lastShownAt = new Date();
+      s.timesShown += 1;
+      s.nextShowAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    }
+  }
+
+  async getDigestDueCount(userId: number): Promise<number> {
+    const now = new Date();
+    let count = 0;
+    for (const [itemId, srsState] of this.srs) {
+      if (srsState.timesShown >= 5) continue;
+      if (srsState.nextShowAt > now) continue;
+      const item = this.items.get(itemId);
+      if (!item || item.userId !== userId) continue;
+      count++;
+    }
+    return count;
   }
 }
