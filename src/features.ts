@@ -13,12 +13,17 @@ export type CommandHandler = (ctx: Ctx, user: UserRecord) => Promise<void>;
 export type StateHandler = (ctx: Ctx, text: string, user: UserRecord) => Promise<void>;
 export type TextHandler = (ctx: Ctx, text: string, user: UserRecord) => Promise<void>;
 
+export type MessageHandler = (ctx: Ctx, user: UserRecord) => Promise<void>;
+
 export interface BotApp {
   store: Store;
   onCommand(name: string, fn: CommandHandler): void;
   onCallback(namespace: string, fn: CallbackHandler): void;
   onState(namespace: string, fn: StateHandler): void;
   onText(fn: TextHandler): void;
+  /** Handler for non-text messages (photo, video, audio, voice,
+   *  document, sticker, etc.) when session.step is idle. */
+  onMessage(fn: MessageHandler): void;
 }
 
 export type Feature = (app: BotApp) => void;

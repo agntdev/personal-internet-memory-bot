@@ -3,11 +3,52 @@
 // means F02 / F03 / FEAT* can be written against the contract
 // before the DB is fully wired.
 
+export interface SavedItemMeta {
+  id: number;
+  userId: number;
+  kind: string;
+  rawText: string;
+  sourceUrl: string | null;
+  summary: string;
+  tags: string[];
+  createdAt: Date;
+}
+
+export interface SearchResult {
+  id: number;
+  summary: string;
+  createdAt: Date;
+  tags: string[];
+}
+
 export interface Store {
   /** Get-or-create the user row for a Telegram user id. */
   upsertUser(telegramId: number): UserRecord;
   /** Look up a user; returns undefined if the row doesn't exist. */
   getUser(telegramId: number): UserRecord | undefined;
+
+  /** Insert an item with tags + srs_state seed. Returns the new item metadata. */
+  insertItem(input: {
+    userId: number;
+    kind: string;
+    rawText: string;
+    sourceUrl?: string | null;
+    telegramMessageId?: number | null;
+    summary: string;
+    tags: string[];
+  }): Promise<SavedItemMeta>;
+
+  /** Check if a URL has already been saved by the user. Returns the
+   *  earliest matching item or undefined. */
+  findUrlDuplicate(userId: number, url: string): Promise<SavedItemMeta | undefined>;
+
+  /** Simple text search across item summaries/tags for the search
+   *  shortcut (details.md §3). */
+  searchItems(userId: number, query: string, limit: number): Promise<SearchResult[]>;
+
+  /** Ensure an auto-collection exists for a tag and attach the item.
+   *  No-op in the in-memory store (auto-collections are a Postgres concern). */
+  ensureAutoCollection(userId: number, itemId: number, tagName: string): Promise<void>;
 }
 
 export interface UserRecord {
@@ -17,12 +58,26 @@ export interface UserRecord {
   createdAt: Date;
 }
 
+interface InternalItem {
+  id: number;
+  userId: number;
+  kind: string;
+  rawText: string;
+  sourceUrl: string | null;
+  telegramMessageId: number | null;
+  summary: string;
+  tags: string[];
+  createdAt: Date;
+}
+
 /** In-memory implementation. The harness relies on a fresh
  *  instance per spec; the production runtime replaces this with
  *  the Postgres-backed implementation from F01. */
 export class MemoryStore implements Store {
   private byTelegram = new Map<number, UserRecord>();
   private nextId = 1;
+  private items = new Map<number, InternalItem>();
+  private nextItemId = 1;
 
   upsertUser(telegramId: number): UserRecord {
     let u = this.byTelegram.get(telegramId);
@@ -35,5 +90,79 @@ export class MemoryStore implements Store {
 
   getUser(telegramId: number): UserRecord | undefined {
     return this.byTelegram.get(telegramId);
+  }
+
+  async insertItem(input: {
+    userId: number;
+    kind: string;
+    rawText: string;
+    sourceUrl?: string | null;
+    telegramMessageId?: number | null;
+    summary: string;
+    tags: string[];
+  }): Promise<SavedItemMeta> {
+    const id = this.nextItemId++;
+    const item: InternalItem = {
+      id,
+      userId: input.userId,
+      kind: input.kind,
+      rawText: input.rawText,
+      sourceUrl: input.sourceUrl ?? null,
+      telegramMessageId: input.telegramMessageId ?? null,
+      summary: input.summary,
+      tags: input.tags,
+      createdAt: new Date(),
+    };
+    this.items.set(id, item);
+    return {
+      id: item.id,
+      userId: item.userId,
+      kind: item.kind,
+      rawText: item.rawText,
+      sourceUrl: item.sourceUrl,
+      summary: item.summary,
+      tags: item.tags,
+      createdAt: item.createdAt,
+    };
+  }
+
+  async findUrlDuplicate(userId: number, url: string): Promise<SavedItemMeta | undefined> {
+    for (const item of this.items.values()) {
+      if (item.userId === userId && item.sourceUrl === url) {
+        return {
+          id: item.id,
+          userId: item.userId,
+          kind: item.kind,
+          rawText: item.rawText,
+          sourceUrl: item.sourceUrl,
+          summary: item.summary,
+          tags: item.tags,
+          createdAt: item.createdAt,
+        };
+      }
+    }
+    return undefined;
+  }
+
+  async searchItems(userId: number, query: string, limit: number): Promise<SearchResult[]> {
+    const q = query.toLowerCase();
+    const results: SearchResult[] = [];
+    for (const item of this.items.values()) {
+      if (item.userId !== userId) continue;
+      if (item.summary.toLowerCase().includes(q) || item.tags.some((t) => t.includes(q))) {
+        results.push({
+          id: item.id,
+          summary: item.summary,
+          createdAt: item.createdAt,
+          tags: item.tags,
+        });
+      }
+    }
+    results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return results.slice(0, limit);
+  }
+
+  async ensureAutoCollection(_userId: number, _itemId: number, _tagName: string): Promise<void> {
+    // No-op: auto-collections are a Postgres concern.
   }
 }
