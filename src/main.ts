@@ -3,9 +3,12 @@
 
 import { makeProductionBot } from "./bot.js";
 import { configFromEnv } from "./config.js";
+import { startWeeklyDigest } from "./scheduler.js";
 
 const cfg = configFromEnv();
-const bot = makeProductionBot(cfg);
+const { bot, store } = makeProductionBot(cfg);
+
+startWeeklyDigest(bot, store);
 
 console.log("[pimb] starting long polling");
 void bot.start();

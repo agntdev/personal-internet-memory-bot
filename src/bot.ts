@@ -146,7 +146,9 @@ export function buildBot(
 type UserRecordLite = ReturnType<Store["upsertUser"]>;
 
 /** Helper for `main.ts`: construct a MemoryStore + real config +
- *  default features, then return the bot. */
-export function makeProductionBot(cfg: BotConfig, features: Feature[] = defaultFeatures): Bot<Ctx> {
-  return buildBot(cfg.botToken, new MemoryStore(), cfg, features);
+ *  default features, then return the bot and store. */
+export function makeProductionBot(cfg: BotConfig, features: Feature[] = defaultFeatures): { bot: Bot<Ctx>; store: Store } {
+  const store = new MemoryStore();
+  const bot = buildBot(cfg.botToken, store, cfg, features);
+  return { bot, store };
 }
