@@ -1,6 +1,6 @@
-// Core bot assembly: the error boundary, /cancel, the callback
-// router, and the text router. Feature installers (startFeature,
-// helpFeature, plus F03 + FEAT02..FEAT12) plug into the BotApp
+// Core bot assembly: the error boundary, the callback router, and
+// the text router. Feature installers (startFeature, helpFeature,
+// cancelFeature, plus F03 + FEAT02..FEAT12) plug into the BotApp
 // in between, so registration order is always correct: commands
 // first, generic text/callback fallbacks last.
 
@@ -37,14 +37,7 @@ export function buildBot(
     }
   });
 
-  // ── /cancel (FEAT10): clears session step, always works (details.md §15) ──
-  bot.command("cancel", async (ctx) => {
-    ctx.session.step = "idle";
-    ctx.session.renameOld = undefined;
-    ctx.session.renameNew = undefined;
-    ctx.session.renameTargets = undefined;
-    await ctx.reply("Cancelled.");
-  });
+  // /cancel moved to cancelFeature (FEAT10). No core handler.
 
   // ── feature installers (FEAT01..FEAT12) ──
   const commands = new Map<string, (ctx: Ctx, user: UserRecordLite) => Promise<void>>();
