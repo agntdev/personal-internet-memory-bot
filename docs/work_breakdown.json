@@ -1,0 +1,101 @@
+{
+  "phase": "dev",
+  "tasks": [
+    {
+      "key": "F00",
+      "kind": "foundation",
+      "title": "Project skeleton, makeBot() factory, session, env, error boundary",
+      "depends_on": []
+    },
+    {
+      "key": "F01",
+      "kind": "foundation",
+      "title": "Postgres schema + db pool + migrations + query helpers (users, items, tags, item_tags, collections, collection_items, srs_state)",
+      "depends_on": []
+    },
+    {
+      "key": "F02",
+      "kind": "foundation",
+      "title": "AI layer: Tagger + Summarizer interfaces, SummaryLengthError, SUMMARY_MIN/MAX_WORDS, local keyword-tagging + 100-200 word summary impls",
+      "depends_on": []
+    },
+    {
+      "key": "F03",
+      "kind": "foundation",
+      "title": "Save flow core: forwarded-message kind detection, raw_text extraction, save pipeline (tag → summarize → store), confirmation card builder, dedupe-notice behavior",
+      "depends_on": ["F00", "F01", "F02"]
+    },
+    {
+      "key": "FEAT01",
+      "kind": "feature",
+      "title": "/start (idempotent user upsert) + /help (command list reply)",
+      "depends_on": ["F00"]
+    },
+    {
+      "key": "FEAT02",
+      "kind": "feature",
+      "title": "/list [n] with pagination (10 default, 50 max, OFFSET-based, paginate() helper)",
+      "depends_on": ["F00", "F01"]
+    },
+    {
+      "key": "FEAT03",
+      "kind": "feature",
+      "title": "/search <query> via tsvector + ILIKE on tags and raw_text, with empty-state card and Show-more callback",
+      "depends_on": ["F00", "F01"]
+    },
+    {
+      "key": "FEAT04",
+      "kind": "feature",
+      "title": "/tag <name> + /tags list with item counts and per-row callback navigation",
+      "depends_on": ["F00", "F01"]
+    },
+    {
+      "key": "FEAT05",
+      "kind": "feature",
+      "title": "/collections + /collection <name|id> + /deletecollection (manual only) with auto-collection ungrouping explanation",
+      "depends_on": ["F00", "F01"]
+    },
+    {
+      "key": "FEAT06",
+      "kind": "feature",
+      "title": "/rename <old> <new> across tags and manual collections with disambiguation when both match",
+      "depends_on": ["F00", "F01"]
+    },
+    {
+      "key": "FEAT07",
+      "kind": "feature",
+      "title": "/delete <id> with inline confirm (✅ Yes / ❌ No) and shortcut del:<item_id> from confirmation card",
+      "depends_on": ["F00", "F01"]
+    },
+    {
+      "key": "FEAT08",
+      "kind": "feature",
+      "title": "/digest manual trigger with 5-item floor, snooze callback that bumps srs_state.next_show_at by 7 days",
+      "depends_on": ["F00", "F01"]
+    },
+    {
+      "key": "FEAT09",
+      "kind": "feature",
+      "title": "/stats dashboard: totals, top-3 tags, next-digest status, Run-digest-now callback",
+      "depends_on": ["F00", "F01"]
+    },
+    {
+      "key": "FEAT10",
+      "kind": "feature",
+      "title": "/cancel clears session.step and any flow-specific fields, replies Cancelled.",
+      "depends_on": ["F00"]
+    },
+    {
+      "key": "FEAT11",
+      "kind": "feature",
+      "title": "Weekly digest scheduler: node-cron Sun 18:00 UTC, queries srs_state, respects 5-10 bound (skip if <5, cap at 10 oldest-due, roll over the rest)",
+      "depends_on": ["F00", "F01", "F03"]
+    },
+    {
+      "key": "FEAT12",
+      "kind": "feature",
+      "title": "BotSpec test suite: 16 JSON specs in tests/specs/ covering all 15 commands + forwarded-message path, wired to AGNTDEV_* env harness",
+      "depends_on": ["FEAT01", "FEAT02", "FEAT03", "FEAT04", "FEAT05", "FEAT06", "FEAT07", "FEAT08", "FEAT09", "FEAT10"]
+    }
+  ]
+}

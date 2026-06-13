@@ -165,7 +165,7 @@ Slash-free entry points:
 | Trigger | Behavior |
 |---|---|
 | Forwarded message (any kind) | Save → tag → summarize → confirm. |
-| Plain text outside a flow | Treated as `/search <text>` only if it looks like a query (has 2+ words). Otherwise just stored as an item. |
+| Plain text outside a flow (when `session.step === "idle"`) | Routed to the save pipeline (kind = `text`). Users search explicitly via `/search`; we never auto-detect a query from plain text. The `/search` command is the only search entry point. |
 | Callback `tag:more:<name>` | Extend `/tag <name>` results. |
 
 ## 4. Conversation / UX Flows
@@ -319,11 +319,11 @@ The Sunday job picks **between 5 and 10** oldest-due items and DMs:
 
 ```
 Bot:  📚 This week's resurfacing (5 items)
-      1. #18  Mar 21  CGO pitfalls
-      2. #12  Mar 15  Postgres isolation levels
-      3. #09  Mar 10  Vim macro you forgot
-      4. #04  Mar 01  …
-      5. #02  Feb 24  …
+      1. #18  Mar 21  CGO pitfalls            go, cgo
+      2. #12  Mar 15  Postgres isolation…     postgres, sql
+      3. #09  Mar 10  Vim macro you forgot    vim
+      4. #04  Mar 01  …                       books
+      5. #02  Feb 24  …                       health
       [Snooze all]
 ```
 
@@ -356,17 +356,23 @@ Bot:  Cancelled.  (clears session.awaiting, no matter what flow was active)
 
 ```ts
 interface Session {
-  step: "idle" | "awaiting_save_input" | "awaiting_search_query"
+  step: "idle" | "awaiting_save_input"
       | "awaiting_delete_confirm" | "awaiting_rename_target";
-  lastSavedItemId?: number;
-  lastQuery?: string;
-  lastQueryPage?: number;
+  // Rename-disambiguation flow data (set when step is
+  // "awaiting_rename_target" and both a tag and a manual collection
+  // match the old name).
+  renameOld?: string;
+  renameNew?: string;
+  renameTargets?: Array<"tag" | "collection">;
 }
 ```
 
 Sessions are private-chat only. Memory in v1, swappable to SQLite
 later. No state beyond what's needed to make the multi-step
 dialogs work — most "state" lives in Postgres, not in the session.
+Search is one-shot (`/search <query>` runs, replies, returns to
+`idle`); it does not need a multi-step session state, and
+pagination state lives in callback data, not the session.
 
 ## 6. Error / Edge Cases
 
