@@ -126,6 +126,7 @@ of scope per the non-goals).
 | `/tags` | List all the user's tags with item counts. |
 | `/collections` | List collections. |
 | `/collection <name|id>` | Show items in a collection. |
+| `/deletecollection <name|id>` | Delete a manual collection (with inline confirm). Auto-collections cannot be deleted — they ungroup themselves when their items are reassigned or when the last item is removed. |
 | `/rename <old> <new>` | Rename a tag or manual collection. |
 | `/delete <id>` | Delete an item (with inline confirm). |
 | `/digest` | Manually trigger this week's digest (preview). |
@@ -246,6 +247,13 @@ Bot:  📁 Your collections
       Manual:
         • "thesis-notes" (12 items)
       [go]  [health]  [thesis-notes]
+
+User: /deletecollection thesis-notes
+Bot:  Delete collection "thesis-notes" (12 items)?
+      Items are kept — they just leave this collection.
+      [✅ Yes]  [❌ No]
+User: [taps Yes]
+Bot:  Deleted collection "thesis-notes". 12 items preserved. ✅
 ```
 
 Auto-collections are generated whenever a new item is saved: any
@@ -255,6 +263,15 @@ the bot creates it, empty, and the next 3+ items saved with the
 same name get attached (handled by a simple tag-name match — not a
 real grouping algorithm; that's the "tag similarity" the spec asks
 for, at the simplest possible interpretation).
+
+**Deletion semantics:** only **manual** collections are
+user-deletable. Deleting a manual collection removes the
+`collections` row and its `collection_items` rows but **leaves the
+underlying `items` and their tags intact** (so they stay searchable
+and the next weekly digest still surfaces them). Auto-collections
+have no delete command — they ungroup themselves automatically when
+their source tag drops below 3 items (item deleted, tag renamed
+away, or tag re-assigned via `/rename`).
 
 ### 4.8 Rename / delete
 
