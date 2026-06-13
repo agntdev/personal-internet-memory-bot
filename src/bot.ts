@@ -68,7 +68,7 @@ export function buildBot(
   for (const [name, fn] of commands) {
     bot.command(name, async (ctx) => {
       if (!ctx.from) return;
-      const user = store.upsertUser(ctx.from.id);
+      const user = await store.upsertUser(ctx.from.id);
       await fn(ctx, user);
     });
   }
@@ -78,7 +78,7 @@ export function buildBot(
   bot.on("callback_query:data", async (ctx) => {
     const data = ctx.callbackQuery.data;
     if (!ctx.from) return;
-    const user = store.upsertUser(ctx.from.id);
+    const user = await store.upsertUser(ctx.from.id);
     const ns = data.split(":", 1)[0]!;
     const handler = callbacks.get(ns);
     if (handler) {
@@ -92,7 +92,7 @@ export function buildBot(
   // ── text router: feature states, feature text handler, fallback ──
   bot.on("message:text", async (ctx) => {
     if (!ctx.from) return;
-    const user = store.upsertUser(ctx.from.id);
+    const user = await store.upsertUser(ctx.from.id);
     const text = ctx.message.text.trim();
     const stateNs = ctx.session.step.split(":", 1)[0]!;
     const stateHandler = states.get(stateNs);
@@ -114,9 +114,9 @@ export function buildBot(
 }
 
 /** Minimal user shape the core routers touch. The full UserRecord
- *  comes from store.upsertUser; this is a local alias so the
- *  installer callback signatures stay readable. */
-type UserRecordLite = ReturnType<Store["upsertUser"]>;
+ *  comes from `await store.upsertUser(...)`; this is a local
+ *  alias so the installer callback signatures stay readable. */
+type UserRecordLite = import("./store.js").UserRecord;
 
 /** Helper for `main.ts`: construct a MemoryStore + real config +
  *  default features, then return the bot. */
