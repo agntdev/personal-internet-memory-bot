@@ -124,8 +124,18 @@ local timezone** (Telegram doesn't give us TZ, so v1 uses UTC; a
 `/settings tz` command can override per-user in a later version —
 but per the non-goals, v1 stays UTC-only).
 
-Job: pick up to 10 items per user whose `next_show_at <= now()` and
-`times_shown < 5`, mark them shown, DM the user a digest.
+Job: pick **between 5 and 10** items per user (the `general.md`
+requirement) whose `next_show_at <= now()` and `times_shown < 5`,
+mark them shown, DM the user a digest. The contract:
+
+- **Fewer than 5 due** → no digest that week. A footer on the
+  user's `/stats` view tells them "Next digest: when 5+ items are
+  due". Never pad with already-shown items to hit the 5-item
+  floor.
+- **5 to 10 due** → send all of them.
+- **More than 10 due** → send the 10 oldest-due (FIFO by
+  `next_show_at`); the rest roll into the next week's candidate
+  pool.
 
 ## 3. Command Set
 
@@ -305,19 +315,24 @@ Bot:  Deleted #42. ✅
 
 ### 4.9 Weekly digest — scheduler-driven
 
-The Sunday job picks up to 10 oldest-unseen items and DMs:
+The Sunday job picks **between 5 and 10** oldest-due items and DMs:
 
 ```
-Bot:  📚 This week's resurfacing (5 of 10)
+Bot:  📚 This week's resurfacing (5 items)
       1. #18  Mar 21  CGO pitfalls
       2. #12  Mar 15  Postgres isolation levels
       3. #09  Mar 10  Vim macro you forgot
-      …
-      [Show all 10]  [Snooze all]
+      4. #04  Mar 01  …
+      5. #02  Feb 24  …
+      [Snooze all]
 ```
 
-`/digest` returns the same content on demand, used in tests as the
-deterministic view of "what the scheduler would send".
+The `(N items)` header always reports the **actual count** in the
+5–10 range. If fewer than 5 items are due that week, the digest
+is **not sent** — `/stats` shows "Next digest: when 5+ items are
+due" instead. `/digest` returns the same content on demand, used
+in tests as the deterministic view of "what the scheduler would
+send" and to confirm the 5-item floor / 10-item ceiling.
 
 ### 4.10 Stats — `/stats`
 
