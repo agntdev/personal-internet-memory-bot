@@ -1,0 +1,22 @@
+{
+  "name": "personal-internet-memory-bot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Personal Internet Memory — Telegram bot to archive, tag, summarize, search, and resurface your saved digital content (AGNTDEV-generated, built on @agntdev/bot-toolkit).",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node dist/main.js"
+  },
+  "dependencies": {
+    "@agntdev/bot-toolkit": "file:./.agntdev-bot-toolkit.tgz",
+    "grammy": "^1.30.0",
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "@types/node": "^20.14.0",
+    "@types/pg": "^8.11.10"
+  }
+}
