@@ -5,8 +5,10 @@
 import type { Feature } from "../features.js";
 import { startFeature } from "./start.js";
 import { helpFeature } from "./help.js";
+import { listFeature } from "./list.js";
 
 export const defaultFeatures: Feature[] = [
   startFeature,
   helpFeature,
+  listFeature,
 ];
