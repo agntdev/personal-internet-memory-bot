@@ -6,9 +6,11 @@ import type { Feature } from "../features.js";
 import { startFeature } from "./start.js";
 import { helpFeature } from "./help.js";
 import { saveFeature } from "./save.js";
+import { searchFeature } from "./search.js";
 
 export const defaultFeatures: Feature[] = [
   startFeature,
   helpFeature,
   saveFeature,
+  searchFeature,
 ];
