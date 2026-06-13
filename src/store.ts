@@ -54,6 +54,9 @@ export interface Store {
    *  desc then name asc, capped at 100. */
   getTags(userId: number): Promise<Array<{ name: string; count: number }>>;
 
+  /** Count total saved items for a user. */
+  countItems(userId: number): Promise<number>;
+
   /** Find all items with a given tag name, newest first. */
   getItemsByTag(userId: number, tagName: string): Promise<SearchResult[]>;
 }
@@ -202,5 +205,13 @@ export class MemoryStore implements Store {
     }
     results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     return results;
+  }
+
+  async countItems(userId: number): Promise<number> {
+    let count = 0;
+    for (const item of this.items.values()) {
+      if (item.userId === userId) count++;
+    }
+    return count;
   }
 }
