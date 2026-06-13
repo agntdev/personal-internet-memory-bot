@@ -83,8 +83,16 @@ export interface Tagger {
 }
 
 export interface Summarizer {
+  // Always returns a string of **100–200 words**. Implementations
+  // MUST enforce the bounds; callers MUST NOT truncate. Throws
+  // `SummaryLengthError` if it cannot reach 100 words even after
+  // padding from related user items.
   summarize(input: { text: string; kind: ItemKind }): Promise<string>;
 }
+
+// Length contract — the only place this number lives.
+export const SUMMARY_MIN_WORDS = 100;
+export const SUMMARY_MAX_WORDS = 200;
 ```
 
 **Local impl (v1, ships in the repo):**
