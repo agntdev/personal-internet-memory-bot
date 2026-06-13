@@ -68,6 +68,10 @@ export interface Store {
   /** Count items currently due for digest (times_shown < 5,
    *  next_show_at <= now) for a user. */
   getDigestDueCount(userId: number): Promise<number>;
+
+  // FEAT11 (scheduler): iterate every known user for the weekly
+  // digest cron. Production wires this to the users table.
+  getAllUsers(): Promise<UserRecord[]>;
 }
 
 export interface UserRecord {
@@ -266,5 +270,10 @@ export class MemoryStore implements Store {
       count++;
     }
     return count;
+  }
+
+  // FEAT11 (scheduler): list every known user.
+  async getAllUsers(): Promise<UserRecord[]> {
+    return [...this.byTelegram.values()];
   }
 }
