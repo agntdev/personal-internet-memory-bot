@@ -49,6 +49,13 @@ export interface Store {
   /** Ensure an auto-collection exists for a tag and attach the item.
    *  No-op in the in-memory store (auto-collections are a Postgres concern). */
   ensureAutoCollection(userId: number, itemId: number, tagName: string): Promise<void>;
+
+  /** List all tags for a user with item counts, ordered by count
+   *  desc then name asc, capped at 100. */
+  getTags(userId: number): Promise<Array<{ name: string; count: number }>>;
+
+  /** Find all items with a given tag name, newest first. */
+  getItemsByTag(userId: number, tagName: string): Promise<SearchResult[]>;
 }
 
 export interface UserRecord {
@@ -164,5 +171,36 @@ export class MemoryStore implements Store {
 
   async ensureAutoCollection(_userId: number, _itemId: number, _tagName: string): Promise<void> {
     // No-op: auto-collections are a Postgres concern.
+  }
+
+  async getTags(userId: number): Promise<Array<{ name: string; count: number }>> {
+    const tagCounts = new Map<string, number>();
+    for (const item of this.items.values()) {
+      if (item.userId !== userId) continue;
+      for (const tag of item.tags) {
+        tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+      }
+    }
+    return Array.from(tagCounts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+      .slice(0, 100);
+  }
+
+  async getItemsByTag(userId: number, tagName: string): Promise<SearchResult[]> {
+    const results: SearchResult[] = [];
+    const tag = tagName.toLowerCase();
+    for (const item of this.items.values()) {
+      if (item.userId !== userId) continue;
+      if (!item.tags.some((t) => t.toLowerCase() === tag)) continue;
+      results.push({
+        id: item.id,
+        summary: item.summary,
+        createdAt: item.createdAt,
+        tags: item.tags,
+      });
+    }
+    results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return results;
   }
 }
