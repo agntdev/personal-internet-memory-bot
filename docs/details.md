@@ -53,6 +53,15 @@
 
 - **Trigger:** any non-command message in a private chat when
   `session.step === "idle"`.
+- **Plain-text search shortcut:** if the inbound text is **not a
+  forwarded message, has 2+ words (≥2 whitespace-separated tokens),
+  and contains no URL**, the bot treats it as `/search <text>` and
+  runs the same flow as §6. This is the `design.md` §3 rule made
+  concrete: a 2+ word plain text acts as a search shortcut; a
+  single-word or empty plain text is routed to the save pipeline.
+  Tokens of length < 2 are dropped before the count. URLs in the
+  text force the save path (URLs are the save pipeline's domain).
+- **Behavior:**
 - **Behavior:**
   1. Detect `kind`:
      - `link` if `text` contains a URL OR the message is a
