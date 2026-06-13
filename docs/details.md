@@ -165,10 +165,32 @@ have leaked through the Tagger.
 ### 3.2 Edges
 
 - **Tagger returns []:** confirm card says "Tags: (no tags yet)".
+- **Summarizer length contract (`SUMMARY_MIN_WORDS=100` /
+  `SUMMARY_MAX_WORDS=200` from `design.md` §2.3):** the
+  Summarizer is responsible for staying inside the band, in this
+  exact order:
+  1. Build the base summary from the source (first sentences
+     for text; `<meta name="description">` / `<og:description>`
+     for URLs; the URL itself if neither meta is present).
+  2. If the base is **longer than 200 words**, condense by
+     taking the first declarative sentences up to 200 words.
+  3. If the base is **shorter than 100 words**, **pad with the
+     first 1–2 sentences of related user-saved items that
+     share at least one tag** (the same user, item picked
+     by recency DESC). Sentences are appended in
+     recency-then-tag-overlap order until the count reaches
+     ≥ 100 words. Padding sentences are wrapped in a brief
+     attribution prefix `"Related: "` so the user can tell
+     what was added.
+  4. If after step 3 the summary is **still < 100 words** (no
+     related items, or all related items are themselves
+     too short), throw `SummaryLengthError` (see below).
 - **Summarizer throws `SummaryLengthError`:** bot replies with
   "⚠️ I couldn't summarize this — try `/save` with a longer text
   or pick a richer source." and does **not** insert the row.
-  (The item is not half-saved.)
+  (The item is not half-saved.) The Summarizer is forbidden
+  from fabricating filler, repeating the source, or pulling
+  in unrelated items just to hit the 100-word floor.
 - **Postgres unreachable:** "⚠️ Couldn't save right now, try again
   in a moment." No row inserted.
 - **Duplicate URL (same user):** save anyway; confirm card adds a
