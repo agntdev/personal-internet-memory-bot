@@ -1,0 +1,629 @@
+[
+  {
+    "name": "cancel",
+    "steps": [
+      {
+        "send": {
+          "text": "/save"
+        },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Send me the text or link to save."
+            }
+          }
+        ]
+      },
+      {
+        "send": {
+          "text": "/cancel"
+        },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Cancelled."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "collections",
+    "steps": [
+      {
+        "send": {
+          "text": "/collection mymanual"
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          }
+        ]
+      },
+      {
+        "send": {
+          "text": "/collections"
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          }
+        ]
+      },
+      {
+        "send": {
+          "text": "/deletecollection mymanual"
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "delete",
+    "steps": [
+      {
+        "send": {
+          "text": "/save"
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          }
+        ]
+      },
+      {
+        "send": {
+          "text": "The rapid evolution of technology has fundamentally transformed modern society in unprecedented ways and created opportunities for global innovation across multiple industries and domains and sectors and markets and regions and communities around the world every single day throughout history as we continue advancing forward toward a better future with more capabilities and tools and resources and knowledge and understanding and wisdom that benefit humanity and improve quality of life for everyone everywhere regardless of background or circumstances or challenges or obstacles they may face along their journey through this complex interconnected digital landscape we all share together as one global civilization moving forward into tomorrow with hope and determination and courage and perseverance and resilience and creativity and imagination and curiosity and passion and dedication and commitment and excellence and integrity and compassion and empathy and kindness and generosity and gratitude and humility and wisdom and understanding and knowledge and insight and foresight and perspective and vision and purpose and meaning and significance and impact and legacy that will endure for generations to come."
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          },
+          {
+            "method": "editMessageText"
+          }
+        ]
+      },
+      {
+        "send": {
+          "text": "/delete 1"
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          }
+        ]
+      },
+      {
+        "send": {
+          "callback": "delconfirm:1:yes"
+        },
+        "expect": [
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "Deleted #1. ✅"
+            }
+          },
+          {
+            "method": "answerCallbackQuery"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "digest",
+    "steps": [
+      {
+        "send": {
+          "text": "/digest"
+        },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Not enough items due yet — your next digest is when 5+ items are ready. You have 0 due so far. Use /list to see everything."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "edge_already_saved",
+    "steps": [
+      {
+        "send": {
+          "update": {
+            "update_id": 1,
+            "message": {
+              "message_id": 1,
+              "date": 0,
+              "chat": {
+                "id": 1,
+                "type": "private",
+                "first_name": "Test"
+              },
+              "from": {
+                "id": 1,
+                "is_bot": false,
+                "first_name": "Test"
+              },
+              "text": "Check out https://unique-test-url.example.com for details about this amazing technology that has fundamentally transformed modern society in unprecedented ways and created opportunities for global innovation across multiple industries and domains and sectors and markets and regions and communities around the world every single day throughout history as we continue advancing forward toward a better future with more capabilities and tools and resources and knowledge and understanding and wisdom that benefit humanity and improve quality of life for everyone everywhere regardless of background or circumstances or challenges or obstacles they may face along their journey through this complex interconnected digital landscape we all share together as one global civilization moving forward into tomorrow with hope and determination and courage and perseverance and resilience and creativity and imagination and curiosity and passion and dedication and commitment and excellence and integrity and compassion and empathy and kindness and generosity and gratitude and humility and wisdom and understanding and knowledge and insight and foresight and perspective and vision and purpose and meaning and significance and impact and legacy that will endure for generations to come."
+            }
+          }
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          },
+          {
+            "method": "editMessageText"
+          }
+        ]
+      },
+      {
+        "send": {
+          "update": {
+            "update_id": 2,
+            "message": {
+              "message_id": 2,
+              "date": 0,
+              "chat": {
+                "id": 1,
+                "type": "private",
+                "first_name": "Test"
+              },
+              "from": {
+                "id": 1,
+                "is_bot": false,
+                "first_name": "Test"
+              },
+              "text": "Check out https://unique-test-url.example.com for details about this amazing technology that has fundamentally transformed modern society in unprecedented ways and created opportunities for global innovation across multiple industries and domains and sectors and markets and regions and communities around the world every single day throughout history as we continue advancing forward toward a better future with more capabilities and tools and resources and knowledge and understanding and wisdom that benefit humanity and improve quality of life for everyone everywhere regardless of background or circumstances or challenges or obstacles they may face along their journey through this complex interconnected digital landscape we all share together as one global civilization moving forward into tomorrow with hope and determination and courage and perseverance and resilience and creativity and imagination and curiosity and passion and dedication and commitment and excellence and integrity and compassion and empathy and kindness and generosity and gratitude and humility and wisdom and understanding and knowledge and insight and foresight and perspective and vision and purpose and meaning and significance and impact and legacy that will endure for generations to come."
+            }
+          }
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          },
+          {
+            "method": "editMessageText"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "edge_no_text",
+    "steps": [
+      {
+        "send": {
+          "update": {
+            "update_id": 1,
+            "message": {
+              "message_id": 1,
+              "date": 0,
+              "chat": {
+                "id": 1,
+                "type": "private",
+                "first_name": "Test"
+              },
+              "from": {
+                "id": 1,
+                "is_bot": false,
+                "first_name": "Test"
+              },
+              "photo": [
+                {
+                  "file_id": "fake123",
+                  "file_unique_id": "uq123",
+                  "width": 100,
+                  "height": 100
+                }
+              ],
+              "forward_origin": {
+                "type": "user",
+                "sender_user": {
+                  "id": 2,
+                  "is_bot": false,
+                  "first_name": "Other"
+                }
+              }
+            }
+          }
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          },
+          {
+            "method": "editMessageText"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "forward",
+    "steps": [
+      {
+        "send": {
+          "update": {
+            "update_id": 1,
+            "message": {
+              "message_id": 1,
+              "date": 0,
+              "chat": {
+                "id": 1,
+                "type": "private",
+                "first_name": "Test"
+              },
+              "from": {
+                "id": 1,
+                "is_bot": false,
+                "first_name": "Test"
+              },
+              "text": "The rapid evolution of technology has fundamentally transformed modern society in unprecedented ways and created opportunities for global innovation across multiple industries and domains and sectors and markets and regions and communities around the world every single day throughout history as we continue advancing forward toward a better future with more capabilities and tools and resources and knowledge and understanding and wisdom that benefit humanity and improve quality of life for everyone everywhere regardless of background or circumstances or challenges or obstacles they may face along their journey through this complex interconnected digital landscape we all share together as one global civilization moving forward into tomorrow with hope and determination and courage and perseverance and resilience and creativity and imagination and curiosity and passion and dedication and commitment and excellence and integrity and compassion and empathy and kindness and generosity and gratitude and humility and wisdom and understanding and knowledge and insight and foresight and perspective and vision and purpose and meaning and significance and impact and legacy that will endure for generations to come.",
+              "forward_origin": {
+                "type": "user",
+                "sender_user": {
+                  "id": 2,
+                  "is_bot": false,
+                  "first_name": "Other"
+                }
+              }
+            }
+          }
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          },
+          {
+            "method": "editMessageText"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "help",
+    "steps": [
+      {
+        "send": {
+          "text": "/help"
+        },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "/start — Greet + one-line overview\n/help — List every command with one-line description\n/save — Manual save: bot asks for text/link, then tags + summarizes\n/list [n] — Most recent N items (default 10, max 50)\n/search <query> — Natural-language search\n/tag <name> — Show all items with that tag\n/tags — List all the user's tags with item counts\n/collections — List collections\n/collection <name|id> — Show items in a collection\n/deletecollection <name|id> — Delete a manual collection (with confirm)\n/rename <old> <new> — Rename a tag or manual collection\n/delete <id> — Delete an item (with confirm)\n/digest — Manually trigger this week's digest\n/stats — Dashboard: totals, top tags, next digest\n/cancel — Abort any in-flight multi-step flow"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "list",
+    "steps": [
+      {
+        "send": {
+          "text": "/save"
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          }
+        ]
+      },
+      {
+        "send": {
+          "text": "The rapid evolution of technology has fundamentally transformed modern society in unprecedented ways and created opportunities for global innovation across multiple industries and domains and sectors and markets and regions and communities around the world every single day throughout history as we continue advancing forward toward a better future with more capabilities and tools and resources and knowledge and understanding and wisdom that benefit humanity and improve quality of life for everyone everywhere regardless of background or circumstances or challenges or obstacles they may face along their journey through this complex interconnected digital landscape we all share together as one global civilization moving forward into tomorrow with hope and determination and courage and perseverance and resilience and creativity and imagination and curiosity and passion and dedication and commitment and excellence and integrity and compassion and empathy and kindness and generosity and gratitude and humility and wisdom and understanding and knowledge and insight and foresight and perspective and vision and purpose and meaning and significance and impact and legacy that will endure for generations to come."
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          },
+          {
+            "method": "editMessageText"
+          }
+        ]
+      },
+      {
+        "send": {
+          "text": "/list"
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "rename",
+    "steps": [
+      {
+        "send": {
+          "text": "/save"
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          }
+        ]
+      },
+      {
+        "send": {
+          "text": "The rapid evolution of technology has fundamentally transformed modern society in unprecedented ways and created opportunities for global innovation across multiple industries and domains and sectors and markets and regions and communities around the world every single day throughout history as we continue advancing forward toward a better future with more capabilities and tools and resources and knowledge and understanding and wisdom that benefit humanity and improve quality of life for everyone everywhere regardless of background or circumstances or challenges or obstacles they may face along their journey through this complex interconnected digital landscape we all share together as one global civilization moving forward into tomorrow with hope and determination and courage and perseverance and resilience and creativity and imagination and curiosity and passion and dedication and commitment and excellence and integrity and compassion and empathy and kindness and generosity and gratitude and humility and wisdom and understanding and knowledge and insight and foresight and perspective and vision and purpose and meaning and significance and impact and legacy that will endure for generations to come."
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          },
+          {
+            "method": "editMessageText"
+          }
+        ]
+      },
+      {
+        "send": {
+          "text": "/collection forward"
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          }
+        ]
+      },
+      {
+        "send": {
+          "text": "/rename forward newforward"
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          }
+        ]
+      },
+      {
+        "send": {
+          "callback": "rename:tag:forward:newforward"
+        },
+        "expect": [
+          {
+            "method": "editMessageText"
+          },
+          {
+            "method": "answerCallbackQuery"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "save",
+    "steps": [
+      {
+        "send": {
+          "text": "/save"
+        },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Send me the text or link to save."
+            }
+          }
+        ]
+      },
+      {
+        "send": {
+          "text": "The rapid evolution of technology has fundamentally transformed modern society in unprecedented ways and created opportunities for global innovation across multiple industries and domains and sectors and markets and regions and communities around the world every single day throughout history as we continue advancing forward toward a better future with more capabilities and tools and resources and knowledge and understanding and wisdom that benefit humanity and improve quality of life for everyone everywhere regardless of background or circumstances or challenges or obstacles they may face along their journey through this complex interconnected digital landscape we all share together as one global civilization moving forward into tomorrow with hope and determination and courage and perseverance and resilience and creativity and imagination and curiosity and passion and dedication and commitment and excellence and integrity and compassion and empathy and kindness and generosity and gratitude and humility and wisdom and understanding and knowledge and insight and foresight and perspective and vision and purpose and meaning and significance and impact and legacy that will endure for generations to come."
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          },
+          {
+            "method": "editMessageText"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "search",
+    "steps": [
+      {
+        "send": {
+          "text": "/save"
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          }
+        ]
+      },
+      {
+        "send": {
+          "text": "The rapid evolution of technology has fundamentally transformed modern society in unprecedented ways and created opportunities for global innovation across multiple industries and domains and sectors and markets and regions and communities around the world every single day throughout history as we continue advancing forward toward a better future with more capabilities and tools and resources and knowledge and understanding and wisdom that benefit humanity and improve quality of life for everyone everywhere regardless of background or circumstances or challenges or obstacles they may face along their journey through this complex interconnected digital landscape we all share together as one global civilization moving forward into tomorrow with hope and determination and courage and perseverance and resilience and creativity and imagination and curiosity and passion and dedication and commitment and excellence and integrity and compassion and empathy and kindness and generosity and gratitude and humility and wisdom and understanding and knowledge and insight and foresight and perspective and vision and purpose and meaning and significance and impact and legacy that will endure for generations to come."
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          },
+          {
+            "method": "editMessageText"
+          }
+        ]
+      },
+      {
+        "send": {
+          "text": "/search"
+        },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Usage: `/search <query>`. Try `/search go architecture march`."
+            }
+          }
+        ]
+      },
+      {
+        "send": {
+          "text": "/search nonexistentxyz"
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          }
+        ]
+      },
+      {
+        "send": {
+          "text": "/search technology"
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "start",
+    "steps": [
+      {
+        "send": {
+          "text": "/start"
+        },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Welcome to your Personal Internet Memory 🧠\nForward me anything — articles, tweets, links, notes.\nI'll tag, summarize, and resurface it weekly.\n\nTry /list, /search, or /tags to find stuff later."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "stats",
+    "steps": [
+      {
+        "send": {
+          "text": "/stats"
+        },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📊 Your memory\nItems: 0  ·  Tags: 0  ·  Collections: 0\nTop tags: none yet\nNext digest: when 5+ items are ready (0 so far)"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "tag",
+    "steps": [
+      {
+        "send": {
+          "text": "/save"
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          }
+        ]
+      },
+      {
+        "send": {
+          "text": "The rapid evolution of technology has fundamentally transformed modern society in unprecedented ways and created opportunities for global innovation across multiple industries and domains and sectors and markets and regions and communities around the world every single day throughout history as we continue advancing forward toward a better future with more capabilities and tools and resources and knowledge and understanding and wisdom that benefit humanity and improve quality of life for everyone everywhere regardless of background or circumstances or challenges or obstacles they may face along their journey through this complex interconnected digital landscape we all share together as one global civilization moving forward into tomorrow with hope and determination and courage and perseverance and resilience and creativity and imagination and curiosity and passion and dedication and commitment and excellence and integrity and compassion and empathy and kindness and generosity and gratitude and humility and wisdom and understanding and knowledge and insight and foresight and perspective and vision and purpose and meaning and significance and impact and legacy that will endure for generations to come."
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          },
+          {
+            "method": "editMessageText"
+          }
+        ]
+      },
+      {
+        "send": {
+          "text": "/tag nonexistenttag"
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          }
+        ]
+      },
+      {
+        "send": {
+          "text": "/tag forward"
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "tags",
+    "steps": [
+      {
+        "send": {
+          "text": "/save"
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          }
+        ]
+      },
+      {
+        "send": {
+          "text": "The rapid evolution of technology has fundamentally transformed modern society in unprecedented ways and created opportunities for global innovation across multiple industries and domains and sectors and markets and regions and communities around the world every single day throughout history as we continue advancing forward toward a better future with more capabilities and tools and resources and knowledge and understanding and wisdom that benefit humanity and improve quality of life for everyone everywhere regardless of background or circumstances or challenges or obstacles they may face along their journey through this complex interconnected digital landscape we all share together as one global civilization moving forward into tomorrow with hope and determination and courage and perseverance and resilience and creativity and imagination and curiosity and passion and dedication and commitment and excellence and integrity and compassion and empathy and kindness and generosity and gratitude and humility and wisdom and understanding and knowledge and insight and foresight and perspective and vision and purpose and meaning and significance and impact and legacy that will endure for generations to come."
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          },
+          {
+            "method": "editMessageText"
+          }
+        ]
+      },
+      {
+        "send": {
+          "text": "/tags"
+        },
+        "expect": [
+          {
+            "method": "sendMessage"
+          }
+        ]
+      }
+    ]
+  }
+]

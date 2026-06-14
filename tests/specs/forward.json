@@ -1,0 +1,24 @@
+{
+  "name": "forward",
+  "steps": [
+    {
+      "send": {
+        "update": {
+          "update_id": 1,
+          "message": {
+            "message_id": 1,
+            "date": 0,
+            "chat": { "id": 1, "type": "private", "first_name": "Test" },
+            "from": { "id": 1, "is_bot": false, "first_name": "Test" },
+            "text": "The rapid evolution of technology has fundamentally transformed modern society in unprecedented ways and created opportunities for global innovation across multiple industries and domains and sectors and markets and regions and communities around the world every single day throughout history as we continue advancing forward toward a better future with more capabilities and tools and resources and knowledge and understanding and wisdom that benefit humanity and improve quality of life for everyone everywhere regardless of background or circumstances or challenges or obstacles they may face along their journey through this complex interconnected digital landscape we all share together as one global civilization moving forward into tomorrow with hope and determination and courage and perseverance and resilience and creativity and imagination and curiosity and passion and dedication and commitment and excellence and integrity and compassion and empathy and kindness and generosity and gratitude and humility and wisdom and understanding and knowledge and insight and foresight and perspective and vision and purpose and meaning and significance and impact and legacy that will endure for generations to come.",
+            "forward_origin": { "type": "user", "sender_user": { "id": 2, "is_bot": false, "first_name": "Other" } }
+          }
+        }
+      },
+      "expect": [
+        { "method": "sendMessage" },
+        { "method": "editMessageText" }
+      ]
+    }
+  ]
+}
