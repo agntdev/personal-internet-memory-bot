@@ -57,8 +57,30 @@ export const digestFeature: Feature = (app) => {
     });
   });
 
-  app.onCallback("digest", async (ctx, data, _user) => {
+  app.onCallback("digest", async (ctx, data, user) => {
     const parts = data.split(":");
+
+    if (parts[1] === "run") {
+      const items = await app.store.pickDigestItems(user.id, DIGEST_LIMIT);
+      if (items.length < FLOOR) {
+        const due = await app.store.getDigestDueCount(user.id);
+        await ctx.editMessageText(
+          `Not enough items due yet \u2014 your next digest is when ${FLOOR}+ items are ready. You have ${due} due so far. Use /list to see everything.`,
+        );
+        await ctx.answerCallbackQuery();
+        return;
+      }
+      const card = renderDigest(items);
+      const itemIds = items.map((i) => i.id);
+      await ctx.editMessageText(card, {
+        reply_markup: inlineKeyboard([
+          [inlineButton("Snooze all", `digest:snooze:${itemIds.join(",")}`)],
+        ]),
+      });
+      await ctx.answerCallbackQuery();
+      return;
+    }
+
     if (parts[1] !== "snooze") {
       await ctx.answerCallbackQuery({ text: "Stale button" });
       return;
