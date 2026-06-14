@@ -51,6 +51,13 @@ export interface Store {
    *  earliest matching item or undefined. */
   findUrlDuplicate(userId: number, url: string): Promise<SavedItemMeta | undefined>;
 
+  /** Fetch a single item by id (must belong to user). */
+  getItem(userId: number, itemId: number): Promise<SavedItemMeta | undefined>;
+
+  /** Delete an item by id (must belong to user). Returns whether
+   *  the item existed and was deleted. */
+  deleteItem(userId: number, itemId: number): Promise<boolean>;
+
   /** Simple text search across item summaries/tags for the search
    *  shortcut (details.md §3). */
   searchItems(userId: number, query: string, limit: number): Promise<SearchResult[]>;
@@ -218,6 +225,29 @@ export class MemoryStore implements Store {
       tags: item.tags,
       createdAt: item.createdAt,
     };
+  }
+
+  async getItem(userId: number, itemId: number): Promise<SavedItemMeta | undefined> {
+    const item = this.items.get(itemId);
+    if (!item || item.userId !== userId) return undefined;
+    return {
+      id: item.id,
+      userId: item.userId,
+      kind: item.kind,
+      rawText: item.rawText,
+      sourceUrl: item.sourceUrl,
+      summary: item.summary,
+      tags: item.tags,
+      createdAt: item.createdAt,
+    };
+  }
+
+  async deleteItem(userId: number, itemId: number): Promise<boolean> {
+    const item = this.items.get(itemId);
+    if (!item || item.userId !== userId) return false;
+    this.items.delete(itemId);
+    this.srs.delete(itemId);
+    return true;
   }
 
   async findUrlDuplicate(userId: number, url: string): Promise<SavedItemMeta | undefined> {
