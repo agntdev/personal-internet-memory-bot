@@ -68,6 +68,14 @@ export interface Store {
   /** Count items currently due for digest (times_shown < 5,
    *  next_show_at <= now) for a user. */
   getDigestDueCount(userId: number): Promise<number>;
+
+  /** List recent items for a user with OFFSET-based pagination.
+   *  Newest first. Returns the page slice + total count. */
+  getRecentItems(
+    userId: number,
+    limit: number,
+    offset: number,
+  ): Promise<{ items: SearchResult[]; total: number }>;
 }
 
 export interface UserRecord {
@@ -266,5 +274,26 @@ export class MemoryStore implements Store {
       count++;
     }
     return count;
+  }
+
+  async getRecentItems(
+    userId: number,
+    limit: number,
+    offset: number,
+  ): Promise<{ items: SearchResult[]; total: number }> {
+    const userItems: InternalItem[] = [];
+    for (const item of this.items.values()) {
+      if (item.userId !== userId) continue;
+      userItems.push(item);
+    }
+    userItems.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    const total = userItems.length;
+    const page = userItems.slice(offset, offset + limit).map((item) => ({
+      id: item.id,
+      summary: item.summary,
+      createdAt: item.createdAt,
+      tags: item.tags,
+    }));
+    return { items: page, total };
   }
 }
