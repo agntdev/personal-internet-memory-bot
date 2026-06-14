@@ -3,6 +3,15 @@
 // means F02 / F03 / FEAT* can be written against the contract
 // before the DB is fully wired.
 
+export interface CollectionRecord {
+  id: number;
+  userId: number;
+  name: string;
+  kind: "auto" | "manual";
+  itemCount: number;
+  createdAt: Date;
+}
+
 export interface SavedItemMeta {
   id: number;
   userId: number;
@@ -76,6 +85,43 @@ export interface Store {
     limit: number,
     offset: number,
   ): Promise<{ items: SearchResult[]; total: number }>;
+
+  /** List all collections for a user, grouped by kind (auto
+   *  first, then manual), ordered by name within each group. */
+  listCollections(userId: number): Promise<CollectionRecord[]>;
+
+  /** Get a single collection by id (number) or name (string
+   *  match, case-insensitive) for a user. Returns undefined
+   *  when not found. */
+  getCollection(
+    userId: number,
+    idOrName: string | number,
+  ): Promise<CollectionRecord | undefined>;
+
+  /** Get items in a collection, newest first, with
+   *  OFFSET-based pagination. */
+  getCollectionItems(
+    collectionId: number,
+    userId: number,
+    limit: number,
+    offset: number,
+  ): Promise<{ items: SearchResult[]; total: number }>;
+
+  /** Delete a manual collection and its item associations.
+   *  Returns info about what was deleted. Auto-collections
+   *  must be refused by the caller (this method only does
+   *  the mechanical delete). */
+  deleteCollection(collectionId: number): Promise<{
+    deleted: boolean;
+    name: string;
+    itemCount: number;
+  }>;
+
+  /** Create a manual collection (empty on creation). */
+  createManualCollection(
+    userId: number,
+    name: string,
+  ): Promise<CollectionRecord>;
 }
 
 export interface UserRecord {
@@ -97,6 +143,14 @@ interface InternalItem {
   createdAt: Date;
 }
 
+interface InternalCollection {
+  id: number;
+  userId: number;
+  name: string;
+  kind: "auto" | "manual";
+  createdAt: Date;
+}
+
 interface InternalSrsState {
   itemId: number;
   lastShownAt: Date | null;
@@ -113,6 +167,9 @@ export class MemoryStore implements Store {
   private items = new Map<number, InternalItem>();
   private srs = new Map<number, InternalSrsState>();
   private nextItemId = 1;
+  private collections = new Map<number, InternalCollection>();
+  private collectionItems = new Map<number, Set<number>>();
+  private nextCollectionId = 1;
 
   upsertUser(telegramId: number): UserRecord {
     let u = this.byTelegram.get(telegramId);
@@ -295,5 +352,130 @@ export class MemoryStore implements Store {
       tags: item.tags,
     }));
     return { items: page, total };
+  }
+
+  async listCollections(userId: number): Promise<CollectionRecord[]> {
+    const result: CollectionRecord[] = [];
+    for (const c of this.collections.values()) {
+      if (c.userId !== userId) continue;
+      const itemCount = this.collectionItems.get(c.id)?.size ?? 0;
+      result.push({
+        id: c.id,
+        userId: c.userId,
+        name: c.name,
+        kind: c.kind,
+        itemCount,
+        createdAt: c.createdAt,
+      });
+    }
+    result.sort((a, b) => {
+      if (a.kind !== b.kind) return a.kind === "auto" ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
+    return result;
+  }
+
+  async getCollection(
+    userId: number,
+    idOrName: string | number,
+  ): Promise<CollectionRecord | undefined> {
+    if (typeof idOrName === "number" || /^\d+$/.test(String(idOrName))) {
+      const id = Number(idOrName);
+      const c = this.collections.get(id);
+      if (c && c.userId === userId) {
+        return {
+          id: c.id,
+          userId: c.userId,
+          name: c.name,
+          kind: c.kind,
+          itemCount: this.collectionItems.get(c.id)?.size ?? 0,
+          createdAt: c.createdAt,
+        };
+      }
+      return undefined;
+    }
+    const name = String(idOrName).toLowerCase();
+    for (const c of this.collections.values()) {
+      if (c.userId === userId && c.name.toLowerCase() === name) {
+        return {
+          id: c.id,
+          userId: c.userId,
+          name: c.name,
+          kind: c.kind,
+          itemCount: this.collectionItems.get(c.id)?.size ?? 0,
+          createdAt: c.createdAt,
+        };
+      }
+    }
+    return undefined;
+  }
+
+  async getCollectionItems(
+    collectionId: number,
+    userId: number,
+    limit: number,
+    offset: number,
+  ): Promise<{ items: SearchResult[]; total: number }> {
+    const coll = this.collections.get(collectionId);
+    if (!coll || coll.userId !== userId) return { items: [], total: 0 };
+
+    const itemIds = this.collectionItems.get(collectionId);
+    if (!itemIds || itemIds.size === 0) return { items: [], total: 0 };
+
+    const results: SearchResult[] = [];
+    for (const id of itemIds) {
+      const item = this.items.get(id);
+      if (item) {
+        results.push({
+          id: item.id,
+          summary: item.summary,
+          createdAt: item.createdAt,
+          tags: item.tags,
+        });
+      }
+    }
+    results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    const total = results.length;
+    const page = results.slice(offset, offset + limit);
+    return { items: page, total };
+  }
+
+  async deleteCollection(collectionId: number): Promise<{
+    deleted: boolean;
+    name: string;
+    itemCount: number;
+  }> {
+    const coll = this.collections.get(collectionId);
+    const itemCount = this.collectionItems.get(collectionId)?.size ?? 0;
+    if (coll) {
+      this.collections.delete(collectionId);
+      this.collectionItems.delete(collectionId);
+      return { deleted: true, name: coll.name, itemCount };
+    }
+    return { deleted: false, name: "", itemCount: 0 };
+  }
+
+  async createManualCollection(
+    userId: number,
+    name: string,
+  ): Promise<CollectionRecord> {
+    const id = this.nextCollectionId++;
+    const coll: InternalCollection = {
+      id,
+      userId,
+      name,
+      kind: "manual",
+      createdAt: new Date(),
+    };
+    this.collections.set(id, coll);
+    this.collectionItems.set(id, new Set());
+    return {
+      id: coll.id,
+      userId: coll.userId,
+      name: coll.name,
+      kind: coll.kind,
+      itemCount: 0,
+      createdAt: coll.createdAt,
+    };
   }
 }
