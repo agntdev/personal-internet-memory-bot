@@ -11,6 +11,7 @@ import { searchFeature } from "./search.js";
 import { tagsFeature } from "./tags.js";
 import { digestFeature } from "./digest.js";
 import { cancelFeature } from "./cancel.js";
+import { renameFeature } from "./rename.js";
 
 export const defaultFeatures: Feature[] = [
   startFeature,
@@ -21,4 +22,5 @@ export const defaultFeatures: Feature[] = [
   tagsFeature,
   digestFeature,
   cancelFeature,
+  renameFeature,
 ];

@@ -76,6 +76,17 @@ export interface Store {
     limit: number,
     offset: number,
   ): Promise<{ items: SearchResult[]; total: number }>;
+
+  /** Rename a tag for a user. Returns the number of items that had
+   *  the old tag name. */
+  renameTag(userId: number, oldName: string, newName: string): Promise<number>;
+
+  /** List all collections for a user with item counts. */
+  getCollections(userId: number): Promise<Array<{ id: number; name: string; kind: string; itemCount: number }>>;
+
+  /** Rename a manual collection for a user. Returns the number of
+   *  collections affected (0 or 1). */
+  renameCollection(userId: number, oldName: string, newName: string): Promise<number>;
 }
 
 export interface UserRecord {
@@ -104,6 +115,13 @@ interface InternalSrsState {
   nextShowAt: Date;
 }
 
+interface InternalCollection {
+  id: number;
+  userId: number;
+  name: string;
+  kind: "auto" | "manual";
+}
+
 /** In-memory implementation. The harness relies on a fresh
  *  instance per spec; the production runtime replaces this with
  *  the Postgres-backed implementation from F01. */
@@ -113,6 +131,9 @@ export class MemoryStore implements Store {
   private items = new Map<number, InternalItem>();
   private srs = new Map<number, InternalSrsState>();
   private nextItemId = 1;
+  private collections = new Map<number, InternalCollection>();
+  private collectionItems = new Map<number, Set<number>>();
+  private nextCollectionId = 1;
 
   upsertUser(telegramId: number): UserRecord {
     let u = this.byTelegram.get(telegramId);
@@ -295,5 +316,47 @@ export class MemoryStore implements Store {
       tags: item.tags,
     }));
     return { items: page, total };
+  }
+
+  async renameTag(userId: number, oldName: string, newName: string): Promise<number> {
+    let count = 0;
+    const lowerOld = oldName.toLowerCase();
+    const lowerNew = newName.toLowerCase();
+    for (const item of this.items.values()) {
+      if (item.userId !== userId) continue;
+      const idx = item.tags.findIndex((t) => t.toLowerCase() === lowerOld);
+      if (idx === -1) continue;
+      if (item.tags.some((t) => t.toLowerCase() === lowerNew && t.toLowerCase() !== lowerOld)) {
+        item.tags.splice(idx, 1);
+      } else {
+        item.tags[idx] = newName.toLowerCase();
+      }
+      count++;
+    }
+    return count;
+  }
+
+  async getCollections(userId: number): Promise<Array<{ id: number; name: string; kind: string; itemCount: number }>> {
+    const result: Array<{ id: number; name: string; kind: string; itemCount: number }> = [];
+    for (const coll of this.collections.values()) {
+      if (coll.userId !== userId) continue;
+      const items = this.collectionItems.get(coll.id);
+      result.push({
+        id: coll.id,
+        name: coll.name,
+        kind: coll.kind,
+        itemCount: items?.size ?? 0,
+      });
+    }
+    return result;
+  }
+
+  async renameCollection(userId: number, oldName: string, newName: string): Promise<number> {
+    for (const coll of this.collections.values()) {
+      if (coll.userId !== userId || coll.name !== oldName || coll.kind !== "manual") continue;
+      coll.name = newName;
+      return 1;
+    }
+    return 0;
   }
 }
