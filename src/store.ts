@@ -123,6 +123,13 @@ export interface Store {
     name: string,
   ): Promise<CollectionRecord>;
 
+  /** Rename a tag for a user. Returns count of affected items. */
+  renameTag(userId: number, oldName: string, newName: string): Promise<{ itemsAffected: number }>;
+
+  /** Rename a manual collection for a user. Only renames
+   *  kind='manual' collections. */
+  renameCollection(userId: number, oldName: string, newName: string): Promise<{ collectionsAffected: number }>;
+
   /** List all known users. Used by the weekly digest scheduler to
    *  iterate over every user who may have due items. */
   getAllUsers(): UserRecord[];
@@ -481,6 +488,34 @@ export class MemoryStore implements Store {
       itemCount: 0,
       createdAt: coll.createdAt,
     };
+  }
+
+  async renameTag(userId: number, oldName: string, newName: string): Promise<{ itemsAffected: number }> {
+    const oldLower = oldName.toLowerCase();
+    let itemsAffected = 0;
+    for (const item of this.items.values()) {
+      if (item.userId !== userId) continue;
+      for (let i = 0; i < item.tags.length; i++) {
+        if (item.tags[i]!.toLowerCase() === oldLower) {
+          item.tags[i] = newName;
+          itemsAffected++;
+          break;
+        }
+      }
+    }
+    return { itemsAffected };
+  }
+
+  async renameCollection(userId: number, oldName: string, newName: string): Promise<{ collectionsAffected: number }> {
+    const oldLower = oldName.toLowerCase();
+    let collectionsAffected = 0;
+    for (const c of this.collections.values()) {
+      if (c.userId === userId && c.kind === "manual" && c.name.toLowerCase() === oldLower) {
+        c.name = newName;
+        collectionsAffected++;
+      }
+    }
+    return { collectionsAffected };
   }
 
   getAllUsers(): UserRecord[] {
