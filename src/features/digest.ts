@@ -17,7 +17,7 @@ function formatDate(d: Date): string {
   return `${weekday} ${dd}`;
 }
 
-function renderDigest(items: SearchResult[]): string {
+export function renderDigest(items: SearchResult[]): string {
   const lines = items.map(
     (r) => {
       const title =
