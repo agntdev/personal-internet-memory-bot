@@ -1,0 +1,17 @@
+{
+  "name": "cancel",
+  "steps": [
+    {
+      "send": { "text": "/save" },
+      "expect": [
+        { "method": "sendMessage", "payload": { "text": "Send me the text or link to save." } }
+      ]
+    },
+    {
+      "send": { "text": "/cancel" },
+      "expect": [
+        { "method": "sendMessage", "payload": { "text": "Cancelled." } }
+      ]
+    }
+  ]
+}

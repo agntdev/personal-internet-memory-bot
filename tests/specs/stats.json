@@ -1,0 +1,11 @@
+{
+  "name": "stats",
+  "steps": [
+    {
+      "send": { "text": "/stats" },
+      "expect": [
+        { "method": "sendMessage", "payload": { "text": "📊 Your memory\nItems: 0  ·  Tags: 0  ·  Collections: 0\nTop tags: none yet\nNext digest: when 5+ items are ready (0 so far)" } }
+      ]
+    }
+  ]
+}

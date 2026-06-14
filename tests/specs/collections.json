@@ -1,0 +1,23 @@
+{
+  "name": "collections",
+  "steps": [
+    {
+      "send": { "text": "/collection mymanual" },
+      "expect": [
+        { "method": "sendMessage" }
+      ]
+    },
+    {
+      "send": { "text": "/collections" },
+      "expect": [
+        { "method": "sendMessage" }
+      ]
+    },
+    {
+      "send": { "text": "/deletecollection mymanual" },
+      "expect": [
+        { "method": "sendMessage" }
+      ]
+    }
+  ]
+}

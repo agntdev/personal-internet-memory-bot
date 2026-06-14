@@ -1,0 +1,11 @@
+{
+  "name": "digest",
+  "steps": [
+    {
+      "send": { "text": "/digest" },
+      "expect": [
+        { "method": "sendMessage", "payload": { "text": "Not enough items due yet — your next digest is when 5+ items are ready. You have 0 due so far. Use /list to see everything." } }
+      ]
+    }
+  ]
+}

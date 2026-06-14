@@ -1,0 +1,26 @@
+{
+  "name": "edge_no_text",
+  "steps": [
+    {
+      "send": {
+        "update": {
+          "update_id": 1,
+          "message": {
+            "message_id": 1,
+            "date": 0,
+            "chat": { "id": 1, "type": "private", "first_name": "Test" },
+            "from": { "id": 1, "is_bot": false, "first_name": "Test" },
+            "photo": [
+              { "file_id": "fake123", "file_unique_id": "uq123", "width": 100, "height": 100 }
+            ],
+            "forward_origin": { "type": "user", "sender_user": { "id": 2, "is_bot": false, "first_name": "Other" } }
+          }
+        }
+      },
+      "expect": [
+        { "method": "sendMessage" },
+        { "method": "editMessageText" }
+      ]
+    }
+  ]
+}
