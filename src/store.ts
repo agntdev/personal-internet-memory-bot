@@ -122,6 +122,10 @@ export interface Store {
     userId: number,
     name: string,
   ): Promise<CollectionRecord>;
+
+  /** List all known users. Used by the weekly digest scheduler to
+   *  iterate over every user who may have due items. */
+  getAllUsers(): UserRecord[];
 }
 
 export interface UserRecord {
@@ -477,5 +481,9 @@ export class MemoryStore implements Store {
       itemCount: 0,
       createdAt: coll.createdAt,
     };
+  }
+
+  getAllUsers(): UserRecord[] {
+    return Array.from(this.byTelegram.values());
   }
 }
