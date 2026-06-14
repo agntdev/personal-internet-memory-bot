@@ -234,23 +234,4 @@ export const saveFeature: Feature = (app) => {
     }
     await ctx.answerCallbackQuery();
   });
-
-  app.onCallback("del", async (ctx, data, _user) => {
-    const itemIdStr = data.split(":", 2)[1];
-    const itemId = Number(itemIdStr);
-    if (!Number.isFinite(itemId) || itemId <= 0) {
-      await ctx.answerCallbackQuery({ text: "Stale button" });
-      return;
-    }
-    try {
-      await ctx.api.editMessageText(
-        ctx.chat!.id,
-        ctx.callbackQuery!.message!.message_id,
-        `Deleted #${itemId}. \u2705`,
-      );
-    } catch {
-      // message may be deleted
-    }
-    await ctx.answerCallbackQuery();
-  });
 };

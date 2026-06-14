@@ -14,6 +14,7 @@ import { digestFeature } from "./digest.js";
 import { statsFeature } from "./stats.js";
 import { cancelFeature } from "./cancel.js";
 import { renameFeature } from "./rename.js";
+import { deleteFeature } from "./delete.js";
 
 export const defaultFeatures: Feature[] = [
   startFeature,
@@ -24,6 +25,7 @@ export const defaultFeatures: Feature[] = [
   tagsFeature,
   collectionsFeature,
   renameFeature,
+  deleteFeature,
   digestFeature,
   statsFeature,
   cancelFeature,

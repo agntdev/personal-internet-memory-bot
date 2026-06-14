@@ -130,6 +130,14 @@ export interface Store {
    *  kind='manual' collections. */
   renameCollection(userId: number, oldName: string, newName: string): Promise<{ collectionsAffected: number }>;
 
+  /** Get a single item by id, scoped to the user. Returns
+   *  undefined when not found or not owned by the user. */
+  getItem(userId: number, itemId: number): Promise<SavedItemMeta | undefined>;
+
+  /** Delete a single item by id, scoped to the user. Returns
+   *  true if an item was deleted, false if not found. */
+  deleteItem(userId: number, itemId: number): Promise<boolean>;
+
   /** List all known users. Used by the weekly digest scheduler to
    *  iterate over every user who may have due items. */
   getAllUsers(): UserRecord[];
@@ -520,5 +528,28 @@ export class MemoryStore implements Store {
 
   getAllUsers(): UserRecord[] {
     return Array.from(this.byTelegram.values());
+  }
+
+  async getItem(userId: number, itemId: number): Promise<SavedItemMeta | undefined> {
+    const item = this.items.get(itemId);
+    if (!item || item.userId !== userId) return undefined;
+    return {
+      id: item.id,
+      userId: item.userId,
+      kind: item.kind,
+      rawText: item.rawText,
+      sourceUrl: item.sourceUrl,
+      summary: item.summary,
+      tags: item.tags,
+      createdAt: item.createdAt,
+    };
+  }
+
+  async deleteItem(userId: number, itemId: number): Promise<boolean> {
+    const item = this.items.get(itemId);
+    if (!item || item.userId !== userId) return false;
+    this.items.delete(itemId);
+    this.srs.delete(itemId);
+    return true;
   }
 }
